@@ -46,15 +46,14 @@ app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   next();
 });
-
-app.use('/auth', authRouter);
 app.use('/makeprofile', personalDetailsRouter);
+app.use('/auth', authRouter);
 
 
-app.use("/", (req, res, next) => {
-  res.write("Testing...");
-  res.end();
-});
+// app.use("/", (req, res, next) => {
+//   res.write("Testing...");
+//   res.end();
+// });
 
 
 app.use((error, req,res, next)=>{

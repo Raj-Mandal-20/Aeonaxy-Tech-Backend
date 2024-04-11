@@ -8,6 +8,8 @@ const  { Resend } = require('resend');
 
 
 exports.validUsername = (req, res, next) => {
+
+  console.log('check For Valid Username!');
   const username = req.body.username;
   User.findOne({ username: username })
     .then((user) => {
