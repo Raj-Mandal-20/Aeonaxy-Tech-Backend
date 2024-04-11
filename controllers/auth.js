@@ -66,11 +66,12 @@ exports.signUp = (req, res, next) => {
   const password = req.body.password;
 
   // check if the user already exists or not ---> add this later
-  User.findOne({ username: username })
+  User.findOne({ $or: [{ email: email }, { username: username }] })
     .then((user) => {
+      // console.log(user);
       if (!user) {
         return bcrypt.hash(password, 12);
-      } else throw new Error("Username Already Exists!");
+      } else throw new Error("Username or Email is already in use!");
     })
     .then((hasedPassword) => {
       const user = new User({
