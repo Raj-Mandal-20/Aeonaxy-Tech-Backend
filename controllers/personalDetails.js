@@ -1,7 +1,29 @@
 const UserDetails = require("../model/UserDetails");
-const User = require('../model/User');
+const User = require("../model/User");
 
 const { validationResult } = require("express-validator");
+
+exports.loadProfilePhoto = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const error = new Error("Validation Falid, Data enterred is Incorrect");
+    error.statusCode = 422;
+    throw error;
+  }
+
+  try {
+    // const user = await User.findById(req.userId);
+    // console.log(user.userDetailsId);
+    const userDetails = await UserDetails.findOne({userId : req.userId });
+    console.log(userDetails);
+    res.status(201).json({
+      profilePhoto: userDetails.profilePhoto,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.postPersonalDetails = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -16,14 +38,13 @@ exports.postPersonalDetails = async (req, res, next) => {
     throw error;
   }
 
-
   const profilePhoto = req.file.path.replace("\\", "/");
   const location = req.body.location;
 
   const userDetails = new UserDetails({
     profilePhoto: profilePhoto,
     location: location,
-    userId : req.userId
+    userId: req.userId,
   });
 
   const details = await userDetails.save();
@@ -34,13 +55,11 @@ exports.postPersonalDetails = async (req, res, next) => {
   await user.save();
 
   res.json({
-    messsage : 'successful'
-  })
-
-
+    messsage: "successful",
+  });
 };
 
-exports.isPersonalDetalilsTaken = async(req, res, next)=>{
+exports.isPersonalDetalilsTaken = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const error = new Error("Validation Falid !");
@@ -48,22 +67,18 @@ exports.isPersonalDetalilsTaken = async(req, res, next)=>{
     throw error;
   }
 
-  try{
-    
+  try {
     const user = await User.findById(req.userId);
-    console.log('User : ',user);
-    if (!user.userDetailsId)  {
-       res.status(200).json({
-        isPersonalDataTaken : false
-       })
+    console.log("User : ", user);
+    if (!user.userDetailsId) {
+      res.status(200).json({
+        isPersonalDataTaken: false,
+      });
     }
     res.status(200).json({
-      isDataTaken : true
-    })
-
-  }
-  catch(err){
+      isDataTaken: true,
+    });
+  } catch (err) {
     next(err);
   }
-
-}
+};
