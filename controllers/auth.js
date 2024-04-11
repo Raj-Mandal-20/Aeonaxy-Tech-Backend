@@ -21,16 +21,38 @@ exports.validUsername = (req, res, next) => {
       }
       res.status(200).json({
           isUsernameTaken : true,
-          message : 'Username Already taken!'
+          message : 'This username is already taken!'
       })
 
-      // throw new Error("Username Exists!");
-    
     })
     .catch((err) => {
       next(err);
     });
 };
+
+exports.validEmail = (req, res, next)=>{
+  const email = req.body.email;
+  User.findOne({ email: email })
+  .then((user)=> {
+    // console.log(!user);
+    if (user === null) {
+      res.status(200).json({
+        isEmailUsed : false
+      })
+    }
+    res.status(200).json({
+       isEmailUsed : true,
+        message : 'This email is already in use!'
+    })
+
+    // throw new Error("Username Exists!");
+  
+  })
+  .catch((err) => {
+    next(err);
+  });
+}
+
 
 exports.signUp = (req, res, next) => {
   const error = validationResult(req);
