@@ -45,7 +45,6 @@ exports.validEmail = (req, res, next)=>{
         message : 'This email is already in use!'
     })
 
-    // throw new Error("Username Exists!");
   
   })
   .catch((err) => {
@@ -65,10 +64,9 @@ exports.signUp = (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
 
-  // check if the user already exists or not ---> add this later
+  // check if the user already exists or not 
   User.findOne({ $or: [{ email: email }, { username: username }] })
     .then((user) => {
-      // console.log(user);
       if (!user) {
         return bcrypt.hash(password, 12);
       } else throw new Error("Username or Email is already in use!");

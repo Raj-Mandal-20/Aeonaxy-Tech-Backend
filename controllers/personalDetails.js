@@ -12,9 +12,7 @@ exports.loadProfilePhoto = async (req, res, next) => {
   }
 
   try {
-    // const user = await User.findById(req.userId);
-    // console.log(user.userDetailsId);
-    const userDetails = await UserDetails.findOne({userId : req.userId });
+    const userDetails = await UserDetails.findOne({ userId: req.userId });
     console.log(userDetails);
     res.status(201).json({
       profilePhoto: userDetails.profilePhoto,

@@ -50,23 +50,15 @@ app.use('/makeprofile', personalDetailsRouter);
 app.use('/auth', authRouter);
 
 
-// app.use("/", (req, res, next) => {
-//   res.write("Testing...");
-//   res.end();
-// });
-
-
 app.use((error, req,res, next)=>{
   console.log(error);
 
-  // add statusCode later after debuging process
-
-  // const status = error.statusCode || 500;
+  const status = error.statusCode || 500;
   const message = error.message;
   const data = error.data;
   res.status(500).json({
     message : message,
-    // status : status
+    status : status
   })
 
 
