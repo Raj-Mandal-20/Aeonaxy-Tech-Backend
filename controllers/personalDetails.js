@@ -13,7 +13,6 @@ exports.loadProfilePhoto = async (req, res, next) => {
 
   try {
     const userDetails = await UserDetails.findOne({ userId: req.userId });
-    console.log(userDetails);
     res.status(201).json({
       profilePhoto: userDetails.profilePhoto,
     });
@@ -46,7 +45,6 @@ exports.postPersonalDetails = async (req, res, next) => {
   });
 
   const details = await userDetails.save();
-  console.log(details);
 
   const user = await User.findById(req.userId);
   user.userDetailsId = details._id;
@@ -67,7 +65,6 @@ exports.isPersonalDetalilsTaken = async (req, res, next) => {
 
   try {
     const user = await User.findById(req.userId);
-    console.log("User : ", user);
     if (!user.userDetailsId) {
       res.status(200).json({
         isPersonalDataTaken: false,

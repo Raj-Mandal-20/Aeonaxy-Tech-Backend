@@ -12,7 +12,6 @@ module.exports = (req, res, next) =>{
     const token = req.get('Authorization').split(' ')[1];
     let decodedToken;
     try{
-        console.log(process.env.SECRET_KEY);
         decodedToken = jwt.verify(token, process.env.SECRET_KEY);
     }
     catch(err){

@@ -2,56 +2,47 @@ const User = require("../model/User");
 const bcrypt = require("bcryptjs");
 const { validationResult } = require("express-validator");
 const jwt = require("jsonwebtoken");
-require('dotenv').config();
+require("dotenv").config();
 
-const  { Resend } = require('resend');
-
+const { Resend } = require("resend");
 
 exports.validUsername = (req, res, next) => {
-
-  console.log('check For Valid Username!');
   const username = req.body.username;
   User.findOne({ username: username })
     .then((user) => {
-      // console.log(!user);
       if (user === null) {
         res.status(200).json({
-          isUsernameTaken : false
-        })
+          isUsernameTaken: false,
+        });
       }
       res.status(200).json({
-          isUsernameTaken : true,
-          message : 'This username is already taken!'
-      })
-
+        isUsernameTaken: true,
+        message: "This username is already taken!",
+      });
     })
     .catch((err) => {
       next(err);
     });
 };
 
-exports.validEmail = (req, res, next)=>{
+exports.validEmail = (req, res, next) => {
   const email = req.body.email;
   User.findOne({ email: email })
-  .then((user)=> {
-    // console.log(!user);
-    if (user === null) {
+    .then((user) => {
+      if (user === null) {
+        res.status(200).json({
+          isEmailUsed: false,
+        });
+      }
       res.status(200).json({
-        isEmailUsed : false
-      })
-    }
-    res.status(200).json({
-       isEmailUsed : true,
-        message : 'This email is already in use!'
+        isEmailUsed: true,
+        message: "This email is already in use!",
+      });
     })
-
-  
-  })
-  .catch((err) => {
-    next(err);
-  });
-}
-
+    .catch((err) => {
+      next(err);
+    });
+};
 
 exports.signUp = (req, res, next) => {
   const error = validationResult(req);
@@ -64,7 +55,7 @@ exports.signUp = (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
 
-  // check if the user already exists or not 
+  // check if the user already exists or not
   User.findOne({ $or: [{ email: email }, { username: username }] })
     .then((user) => {
       if (!user) {
@@ -125,7 +116,6 @@ exports.signIn = (req, res, next) => {
         error.statusCode = 401;
         throw error;
       }
-      console.log(process.env.SECRET_KEY);
 
       const token = jwt.sign(
         {
@@ -139,20 +129,19 @@ exports.signIn = (req, res, next) => {
         }
       );
       req.userId = loadedUser._id;
-      
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    try{
+
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      try {
         await resend.emails.send({
-        from: `Dribble <${process.env.EMAIL_FROM}>`,
-        to: [`${process.env.EMAIL_TO}`],
-        subject: 'Verify Your Account',
-        text: 'Your one time Otp is ....'
+          from: `Dribble <${process.env.EMAIL_FROM}>`,
+          to: [`${process.env.EMAIL_TO}`],
+          subject: "Verify Your Account",
+          text: "Your one time Otp is ....",
         });
-    }
-    catch(err){
+      } catch (err) {
         next(err);
-    }
-    res.status(200).json({
+      }
+      res.status(200).json({
         token: token,
         message: "Loggedin Successful!",
       });
