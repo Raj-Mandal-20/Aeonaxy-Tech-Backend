@@ -131,7 +131,7 @@ exports.signIn = (req, res, next) => {
           email: loadedUser.email,
           userId: loadedUser._id.toString(),
         },
-        "somesupersecret",
+        process.env.SECRET_KEY,
         {
           expiresIn: "1h",
         }
