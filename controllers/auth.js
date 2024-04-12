@@ -125,6 +125,8 @@ exports.signIn = (req, res, next) => {
         error.statusCode = 401;
         throw error;
       }
+      console.log(process.env.SECRET_KEY);
+
       const token = jwt.sign(
         {
           username: loadedUser.username,
