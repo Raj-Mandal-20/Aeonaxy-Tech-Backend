@@ -141,10 +141,10 @@ exports.signIn = (req, res, next) => {
     const resend = new Resend(process.env.RESEND_API_KEY);
     try{
         await resend.emails.send({
-        from: 'Dribble <rajmandal.live@resend.dev>',
-        to: ['account@refero.design'],
-        subject: 'Tesing Email Using Resend',
-        text: 'Verify Your Account!'
+        from: `Dribble <${process.env.EMAIL_FROM}>`,
+        to: [`${process.env.EMAIL_TO}`],
+        subject: 'Verify Your Account',
+        text: 'Your one time Otp is ....'
         });
     }
     catch(err){
