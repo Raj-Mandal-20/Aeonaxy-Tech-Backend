@@ -29,6 +29,10 @@ const fileFilter = (req, file, cb) => {
   } else cb(null, false);
 };
 
+// email template using ejs
+app.set('view engine', 'ejs');
+app.use(express.static(path.join(__dirname, 'public')));
+
 app.use(bodyParser.json());
 app.use(
   multer({ storage: fileStorage, fileFilter: fileFilter }).single("profilePhoto")
