@@ -3,8 +3,71 @@ const bcrypt = require("bcryptjs");
 const { validationResult } = require("express-validator");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+const path = require("path");
+const ejs = require("ejs");
+const nodemailer = require("nodemailer");
+const fs = require("fs");
+const { promisify } = require("util");
+const otp = require("otp-generator");
+
+const readFileAsync = promisify(fs.readFile);
 
 const { Resend } = require("resend");
+
+async function sendEMail(username, email) {
+  console.log('testing email.');
+  const htmlTemplate = await readFileAsync("./public/html/template.ejs");
+  const imageAttachment = await readFileAsync("./public/images/mail.png");
+
+  const templatePath = path.join(__dirname, "..", "public/html/template.ejs");
+  const template = fs.readFileSync(templatePath, "utf-8");
+
+  const password = otp.generate(6, {
+    upperCaseAlphabets: false,
+    specialChars: false,
+    lowerCaseAlphabets: false,
+  });
+  const htmlContent = ejs.render(template, {
+    username: username,
+    password: password,
+  });
+
+  console.log(password);
+
+  const transporter = nodemailer.createTransport({
+    service: "Gmail",
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: {
+      user: process.env.EMAIL_FROM,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const mailOptions = {
+    from: `Dribble <${process.env.EMAIL_FROM}>`,
+    to: email,
+    subject: "Dribble Account Verification",
+    html : htmlContent,
+    attachments: [
+      {
+        filename: "mail.png",
+        content: imageAttachment,
+        encoding: "base64",
+        cid: "uniqueImageCID", // Referenced in the HTML template
+      },
+    ],
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error("Error sending email: ", error);
+    } else {
+      console.log("Email sent: ", info.response);
+    }
+  });
+}
 
 exports.validUsername = (req, res, next) => {
   const username = req.body.username;
@@ -54,6 +117,7 @@ exports.signUp = (req, res, next) => {
   const username = req.body.username;
   const email = req.body.email;
   const password = req.body.password;
+  console.log('Signup Form Triggerd!');
 
   // check if the user already exists or not
   User.findOne({ $or: [{ email: email }, { username: username }] })
@@ -69,6 +133,8 @@ exports.signUp = (req, res, next) => {
         email: email,
         password: hasedPassword,
       });
+      sendEMail(username, email);
+      console.log('sendemil Line Crossed!')
       return user.save();
     })
     .then((result) => {
@@ -143,6 +209,7 @@ exports.signIn = (req, res, next) => {
       }
       res.status(200).json({
         token: token,
+        email : loadedUser.email,
         message: "Loggedin Successful!",
       });
     })
