@@ -12,10 +12,8 @@ const otp = require("otp-generator");
 
 const readFileAsync = promisify(fs.readFile);
 
-const { Resend } = require("resend");
-
 async function sendEMail(username, email) {
-  console.log('testing email.');
+  console.log("testing email.");
   const htmlTemplate = await readFileAsync("./public/html/template.ejs");
   const imageAttachment = await readFileAsync("./public/images/mail.png");
 
@@ -49,7 +47,7 @@ async function sendEMail(username, email) {
     from: `Dribble <${process.env.EMAIL_FROM}>`,
     to: email,
     subject: "Dribble Account Verification",
-    html : htmlContent,
+    html: htmlContent,
     attachments: [
       {
         filename: "mail.png",
@@ -60,12 +58,16 @@ async function sendEMail(username, email) {
     ],
   };
 
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.error("Error sending email: ", error);
-    } else {
-      console.log("Email sent: ", info.response);
-    }
+  return new Promise((resolve, reject) => {
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("Error sending email: ", error);
+        reject(error);
+      } else {
+        console.log("Email sent: ", info.response);
+        resolve(info);
+      }
+    });
   });
 }
 
@@ -117,7 +119,7 @@ exports.signUp = (req, res, next) => {
   const username = req.body.username;
   const email = req.body.email;
   const password = req.body.password;
-  console.log('Signup Form Triggerd!');
+  console.log("Signup Form Triggerd!");
 
   // check if the user already exists or not
   User.findOne({ $or: [{ email: email }, { username: username }] })
@@ -133,8 +135,7 @@ exports.signUp = (req, res, next) => {
         email: email,
         password: hasedPassword,
       });
-      sendEMail(username, email);
-      console.log('sendemil Line Crossed!')
+      console.log("sendemil Line Crossed!");
       return user.save();
     })
     .then((result) => {
@@ -146,77 +147,73 @@ exports.signUp = (req, res, next) => {
     .catch((err) => next(err));
 };
 
-exports.signIn = (req, res, next) => {
-  // check signIn either using username or email
-  const error = validationResult(req);
-  if (!error.isEmpty()) {
-    throw new Error("Validation Failed!");
-  }
+exports.signIn = async (req, res, next) => {
+  try {
+    console.log("Run 1");
+    const error = validationResult(req);
+    if (!error.isEmpty()) {
+      throw new Error("Validation Failed!");
+    }
+    console.log("Run 2");
+    const credential = req.body.credential;
+    const password = req.body.password;
+    console.log("Run 3");
+    let checkCredential, loadedUser;
+    if (credential.includes("@")) {
+      console.log("logging through email....");
+      checkCredential = {
+        email: credential,
+      };
+    } else {
+      checkCredential = {
+        username: credential,
+      };
+    }
+    console.log("Run 4");
 
-  const credential = req.body.credential;
-  const password = req.body.password;
+    const user = await User.findOne(checkCredential);
+    if (!user) {
+      throw new Error("User not Exists");
+    }
+    console.log("Run 5");
+    loadedUser = user;
+    const isEqual = await bcrypt.compare(password, user.password);
+    if (!isEqual) {
+      const error = new Error("Wrong Password!");
+      error.statusCode = 401;
+      throw error;
+    }
+    console.log("Run 6");
+    const token = jwt.sign(
+      {
+        username: loadedUser.username,
+        email: loadedUser.email,
+        userId: loadedUser._id.toString(),
+      },
+      process.env.SECRET_KEY,
+      {
+        expiresIn: "1h",
+      }
+    );
 
-  let checkCredential;
-  if (credential.includes("@")) {
-    console.log("logging through email....");
-    checkCredential = {
-      email: credential,
-    };
-  } else {
-    checkCredential = {
-      username: credential,
-    };
-  }
-  let loadedUser;
-  User.findOne(checkCredential)
-    .then((user) => {
-      if (!user) {
-        throw new Error("User not Exists");
-      }
-      loadedUser = user;
-      return bcrypt.compare(password, user.password);
-    })
-    .then(async (isEqual) => {
-      if (!isEqual) {
-        const error = new Error("Wrong Password!");
-        error.statusCode = 401;
-        throw error;
-      }
-
-      const token = jwt.sign(
-        {
-          username: loadedUser.username,
-          email: loadedUser.email,
-          userId: loadedUser._id.toString(),
-        },
-        process.env.SECRET_KEY,
-        {
-          expiresIn: "1h",
-        }
-      );
-      req.userId = loadedUser._id;
-
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      try {
-        await resend.emails.send({
-          from: `Dribble <${process.env.EMAIL_FROM}>`,
-          to: [`${process.env.EMAIL_TO}`],
-          subject: "Verify Your Account",
-          text: "Your one time Otp is ....",
-        });
-      } catch (err) {
-        next(err);
-      }
-      res.status(200).json({
-        token: token,
-        email : loadedUser.email,
-        message: "Loggedin Successful!",
-      });
-    })
-    .catch((err) => {
-      if (!err.statusCode) {
-        err.statusCode = 500;
-      }
-      next(err);
+    console.log("Before Mail!");
+    if (!loadedUser.is_email_verified) {
+        await sendEMail(loadedUser.username, loadedUser.email);
+    }
+    console.log("After Mail!");
+      
+    console.log("Before response!");
+    req.userId = loadedUser._id;
+    console.log("Run 7");
+    res.status(200).json({
+      token: token,
+      email: loadedUser.email,
+      message: "Loggedin Successful!",
     });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
 };

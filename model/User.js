@@ -21,7 +21,11 @@ const userSchema = new Schema({
   userDetailsId : {
     type : Schema.Types.ObjectId,
     ref : 'UserDetail',
-  }
+  },
+  is_email_verified: {
+    type: Boolean,
+    default: false,
+  },
  
 });
 
